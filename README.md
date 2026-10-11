@@ -1,41 +1,116 @@
-## 🌱 Green AI Benchmarking Framework
+# 🌱 Green AI Benchmarking Framework
 
-A Python-based machine learning benchmarking project that compares predictive performance, training time, prediction time, process memory usage, and raw CPU energy-counter measurements across different machine learning models.
+**An experimental comparison of machine learning accuracy, execution time, process memory usage, and energy-related measurements.**
 
-## 📌 Project Overview
+This project investigates the computational trade-offs of three classification algorithms using a consistent dataset and train-test split. It combines predictive performance with resource-related measurements to explore more resource-aware machine learning.
 
-Machine learning models can achieve similar predictive performance while requiring different amounts of computational resources.
+## 🎯 Research Objectives
 
-This project investigates the trade-offs between model accuracy and computational cost to help understand how machine learning choices relate to Green AI.
-
-## 🎯 Objectives
-
-- Compare machine learning models using the same dataset and train-test split.
-- Measure model accuracy and execution time.
-- Examine process memory usage during model training.
-- Collect raw RAPL energy-counter measurements where supported.
+- Compare Logistic Regression, Random Forest, and Support Vector Machine (SVM).
+- Evaluate predictive accuracy, training time, and prediction time.
+- Measure observed peak process memory usage.
+- Collect raw CPU package energy-counter deltas where supported.
 - Analyse trade-offs between predictive performance and computational cost.
-- Generate CSV reports and visualizations for further analysis.
+- Automate result aggregation and visualization using Python.
 
-## 🧠 Models Compared
+##  Models Evaluated
 
-The project evaluates three classification algorithms:
+| Model | Configuration |
+|---|---|
+| Logistic Regression | StandardScaler pipeline; `max_iter=5000` |
+| Random Forest | 100 trees; `n_jobs=-1` |
+| Support Vector Machine | StandardScaler pipeline |
 
-1. **Logistic Regression**
-2. **Random Forest Classifier**
-3. **Support Vector Machine (SVM)**
+## 📊 Dataset and Experimental Setup
 
-## 📊 Dataset
+The experiments use the Breast Cancer Wisconsin Diagnostic dataset available through scikit-learn.
 
-The project uses the **Breast Cancer Wisconsin Diagnostic dataset** available through scikit-learn.
+| Property | Description |
+|---|---|
+| Samples | 569 |
+| Input features | 30 |
+| Task | Binary classification |
+| Train-test split | 80:20 |
+| Stratification | Yes |
+| Random state | 42 |
 
-- Samples: 569
-- Features: 30
-- Task: Binary classification
+The fixed split supports a controlled comparison between the selected models. Accuracy results may change with a different split or dataset.
 
-The dataset is divided into training and testing sets using a stratified split, with an 80:20 ratio and a fixed random state of 42.
+##  Key Results
 
-## 🛠️ Technologies Used
+### Predictive performance
+
+| Model | Accuracy |
+|---|---:|
+| Logistic Regression | 98.25% |
+| Random Forest | 95.61% |
+| SVM | 98.25% |
+
+Logistic Regression and SVM achieved the same accuracy on the evaluated test split. Random Forest achieved approximately 2.63 percentage points lower accuracy.
+
+### Average execution time
+
+| Model | Training time (s) | Prediction time (s) |
+|---|---:|---:|
+| Logistic Regression | 0.009831 | 0.000745 |
+| Random Forest | 0.189237 | 0.037707 |
+| SVM | 0.005318 | 0.002186 |
+
+These values are averages from repeated timing benchmarks. Timing can vary with system load, software versions, and hardware conditions.
+
+### Observed peak process memory
+
+| Model | Average peak RSS (MB) | Average peak RSS increase (MB) |
+|---|---:|---:|
+| Logistic Regression | 154.625 | 2.195 |
+| Random Forest | 154.780 | 2.383 |
+| SVM | 154.408 | 2.211 |
+
+RSS means resident set size: the physical memory occupied by the measured process. These measurements include Python, loaded libraries, data, model objects, and temporary allocations; they are not exact model-only memory measurements.
+
+### Raw energy-counter measurements
+
+| Model | Average raw counter delta per fit |
+|---|---:|
+| Logistic Regression | 70,278,910 |
+| Random Forest | 421,312,400 |
+| SVM | 53,750,760 |
+
+**Important:** These are raw RAPL package energy-counter deltas, not verified joules. They have not been calibrated or validated as physical energy measurements. Package-level readings can include operating-system and background activity, so they should be interpreted as exploratory energy-related indicators rather than definitive energy consumption.
+
+## 📈 Visualizations
+
+### Accuracy comparison
+
+![Model accuracy comparison](results/plots/research_accuracy.png)
+
+### Training and prediction time
+
+![Timing comparison](results/plots/research_timing_comparison.png)
+
+### Accuracy versus training time
+
+![Accuracy versus training time](results/plots/research_accuracy_vs_training.png)
+
+### Peak process memory
+
+![Peak process memory comparison](results/plots/research_peak_memory.png)
+
+### Raw RAPL counter comparison
+
+![Raw RAPL counter comparison](results/plots/research_rapl_counter.png)
+
+## 🔬 Interpretation
+
+The results illustrate that model selection involves multiple computational trade-offs.
+
+- **Logistic Regression** matched SVM's test accuracy and had the lowest average prediction time in these experiments.
+- **SVM** achieved the fastest average training time and the lowest observed average raw RAPL counter delta.
+- **Random Forest** had the lowest test accuracy of the three models, the longest measured training and prediction times, and the highest average peak RSS increase and raw counter delta.
+
+These observations apply only to the tested dataset, configurations, software environment, and machine. They do not establish a universal ranking of these algorithms.
+
+## 🛠️ Technology Stack
 
 - Python
 - NumPy
@@ -43,63 +118,52 @@ The dataset is divided into training and testing sets using a stratified split, 
 - scikit-learn
 - Matplotlib
 - psutil
-- Windows Performance Monitoring / RAPL counters where available
+- Windows and available RAPL energy-counter interfaces
 
-## ⚙️ Setup and Installation
+## ⚙️ Installation
 
-### 1. Clone the repository
+Clone the repository:
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd Green-ai-benchmark
+git clone https://github.com/Shyrestha/green-ai-benchmarking.git
+cd green-ai-benchmarking
 ```
 
-Replace the placeholder with your actual GitHub repository URL after uploading the project.
-
-### 2. Create a virtual environment
+Create and activate a virtual environment in PowerShell:
 
 ```powershell
 python -m venv .venv
-```
-
-### 3. Activate the environment
-
-```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation, use an appropriate execution-policy setting for your environment.
-
-### 4. Install dependencies
+Install the recorded dependencies:
 
 ```bash
-python -m pip install numpy pandas scikit-learn matplotlib psutil
+python -m pip install -r requirements.txt
 ```
 
-## ▶️ Running the Project
+##  Run the Workflow
 
-### Safe mode — analyse existing benchmark results
+### Analyse existing measurements
 
 ```bash
 python run_green_ai.py
 ```
 
-Safe mode reuses existing benchmark measurements, combines the results, analyses model trade-offs, and generates research visualizations. It does not rerun the timing, memory, or energy-counter experiments.
+Safe mode combines the existing benchmark summaries, updates the trade-off analysis, and regenerates the research plots.
 
-### Full benchmark mode — rerun experiments
+### Rerun the experiments
 
 ```bash
 python run_green_ai.py --full
 ```
 
-Full mode reruns the timing, memory, and raw energy-counter benchmarks before rebuilding the combined analysis and plots.
+Full mode reruns timing, memory, and raw energy-counter experiments before rebuilding the analysis and visualizations. It can overwrite existing benchmark CSV files, so back up any results you want to preserve first.
 
-**Important:** Full mode can overwrite existing benchmark CSV files. Back up results you want to preserve before running it.
-
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```text
-Green-ai-benchmark/
+green-ai-benchmarking/
 ├── run_green_ai.py
 ├── repeated_benchmark.py
 ├── peak_memory_benchmark.py
@@ -107,55 +171,40 @@ Green-ai-benchmark/
 ├── combine_results.py
 ├── green_ai_analysis.py
 ├── plot_green_ai_research.py
-├── plot_results.py
-├── results/
-│   ├── metrics/
-│   └── plots/
-└── README.md
+├── requirements.txt
+├── README.md
+└── results/
+    ├── metrics/
+    └── plots/
 ```
 
-Other experiment and diagnostic scripts are also included in the project.
+Other baseline, diagnostic, and visualization scripts are included in the repository.
 
-## 📈 Results and Visualizations
+## ⚠️ Methodology and Limitations
 
-The workflow generates CSV files and plots to help compare the evaluated models.
+- Accuracy is currently evaluated using one fixed stratified train-test split.
+- Timing results are experimental measurements and can vary between runs.
+- Peak RSS is sampled and may miss brief memory peaks.
+- Memory measurements represent the complete measured process rather than model-only memory.
+- RAPL results are raw counter deltas and have not been verified as joules.
+- Timing, memory, and energy-counter measurements were collected in separate experiments; they are not synchronized observations of a single execution.
+- Results should not be generalized to other hardware, datasets, or model configurations without further experiments.
 
-Examples of the generated visualizations include:
+##  Future Work
 
-- Model training-time comparison
-- Accuracy versus training time
-- Peak process memory comparison
-- Raw RAPL counter comparison
-- Model accuracy comparison
+- Repeat accuracy evaluation across multiple stratified splits or cross-validation folds.
+- Report confidence intervals and additional statistical comparisons.
+- Improve isolation of benchmark processes and quantify background-system effects.
+- Validate energy-counter units and measurement methodology.
+- Evaluate additional datasets and model families.
+- Investigate accuracy-resource trade-offs across a broader range of workloads.
 
-Combined metrics are stored in `results/metrics/`, while visualizations are stored in `results/plots/`.
+##  Motivation: Green AI
 
-## 🔬 Measurement Methodology and Limitations
+Green AI encourages consideration of computational resources alongside predictive performance. This project is an initial experimental framework for exploring those trade-offs through reproducible measurements, transparent reporting, and careful interpretation.
 
-This project is an experimental benchmark, and its measurements should be interpreted carefully.
+##  Author
 
-- **Accuracy:** The reported accuracy uses one fixed train-test split. Results may differ with other splits or datasets.
-- **Execution time:** Training and prediction times are measured experimentally and may vary with system load and software conditions.
-- **Memory:** The reported peak resident set size (RSS) includes the Python process, loaded libraries, dataset, model, and temporary allocations. It is not an exact measurement of memory used by the model alone. Peak RSS is sampled, so brief peaks may be missed.
-- **Energy-counter measurements:** The recorded RAPL values are raw counter deltas per fit. They have not been validated or converted into physical energy units such as joules. Package-level measurements may include operating-system and background activity.
-- **Comparability:** Timing, memory, and energy-counter measurements are collected in separate experiments. They should not be interpreted as perfectly synchronized measurements of one execution.
-- **Scope:** Findings apply to the selected dataset, model configurations, software environment, and test machine. They should not be generalized to all machine learning workloads.
+Developed as a Python-based machine learning benchmarking and Green AI exploration project.
 
-## 🚀 Future Improvements
-
-- Evaluate additional datasets and machine learning algorithms.
-- Repeat accuracy evaluation across multiple train-test splits.
-- Improve measurement isolation and quantify system-background effects.
-- Validate energy measurement units and methodology.
-- Add confidence intervals and more detailed statistical analysis.
-- Automate experiment reports and improve reproducibility.
-
-## 🌍 Why Green AI?
-
-Green AI emphasizes not only what machine learning models can achieve, but also the computational resources required to achieve it.
-
-By measuring predictive performance alongside execution time, memory usage, and energy-related indicators, this project explores how model selection can support more resource-aware machine learning.
-
-## 👩‍💻 Author
-
-Developed as a machine learning and Green AI benchmarking project using Python.
+**Repository:** [github.com/Shyrestha/green-ai-benchmarking](https://github.com/Shyrestha/green-ai-benchmarking)
